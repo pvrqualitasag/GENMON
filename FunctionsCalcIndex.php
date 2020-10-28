@@ -45,29 +45,39 @@ return $index1;
 
 function Min_radius($breed_id){
 
-$sql_distance= "select st_distance(st_setsrid(a.wmc,3857), st_setsrid(pc.centroid,3857)) as distance, p.num_ind_lastgi
-	from (select st_geomfromtext('POINT(' || sum(st_x(st_setsrid(pc.centroid,3857))*p.num_ind_lastgi)/sum(p.num_ind_lastgi) ||' ' || sum(st_y(st_setsrid(pc.centroid,3857))*p.num_ind_lastgi)/sum(p.num_ind_lastgi) || ')') as wmc
-	from (select p1.num_ind_lastgi as num_ind_lastgi, p1.plz as plz from breed".$breed_id."_inb_plz p1 where p1.num_ind_lastgi is not null) p, plz_centroid pc where p.plz=pc.plz
-	) a, plz_centroid pc, (select * from breed".$breed_id."_inb_plz where num_ind_lastgi is not null) p
-	where pc.plz=p.plz
-	order by distance"; //Calculate the WMC of the breed and orders the plz according to the distance to the WMC
-$distance1=pg_query($sql_distance);
-$sql_num_ind="select sum(p.num_ind_lastgi)
-from breed".$breed_id."_inb_plz p";
-$num_ind0=pg_query($sql_num_ind);
-$num_ind_total=pg_fetch_result($num_ind0,0,0);
-$num_ind=0;
-$num_ind_percent=0;
-$i=0;
-while($num_ind_percent<75){
-	$num_ind+=pg_fetch_result($distance1, $i, 1);
-	$num_ind_percent=$num_ind/$num_ind_total*100;
-	$min_radius2=pg_fetch_result($distance1, $i, 0)/1000; //radius around WMC containing 75% of animals in km
+  $sql_distance= "select st_distance(st_setsrid(a.wmc,3857), st_setsrid(pc.centroid,3857)) as distance, p.num_ind_lastgi
+	  from (select st_geomfromtext('POINT(' || sum(st_x(st_setsrid(pc.centroid,3857))*p.num_ind_lastgi)/sum(p.num_ind_lastgi) ||' ' || sum(st_y(st_setsrid(pc.centroid,3857))*p.num_ind_lastgi)/sum(p.num_ind_lastgi) || ')') as wmc
+	  from (select p1.num_ind_lastgi as num_ind_lastgi, p1.plz as plz from breed".$breed_id."_inb_plz p1 where p1.num_ind_lastgi is not null) p, plz_centroid pc where p.plz=pc.plz
+	  ) a, plz_centroid pc, (select * from breed".$breed_id."_inb_plz where num_ind_lastgi is not null) p
+	  where pc.plz=p.plz
+	  order by distance"; //Calculate the WMC of the breed and orders the plz according to the distance to the WMC
+  $distance1=pg_query($sql_distance);
+  $sql_num_ind="select sum(p.num_ind_lastgi)
+  from breed".$breed_id."_inb_plz p";
+  $num_ind0=pg_query($sql_num_ind);
+  $num_ind_total=pg_fetch_result($num_ind0,0,0);
+  $num_ind=0;
+  $num_ind_percent=0;
+  $min_radius2=0;
+  // Avoid division by zero exception
+  if ($num_ind_total > 0){
+    $i=0;
+    while($num_ind_percent<75){
+	    $num_ind+=pg_fetch_result($distance1, $i, 1);
+	    $num_ind_percent=$num_ind/$num_ind_total*100;
+	    $min_radius2=pg_fetch_result($distance1, $i, 0)/1000; //radius around WMC containing 75% of animals in km
 	
-	$i++;
-	}
-$min_radius2=round($min_radius2, 2);
-return $min_radius2;
+	    $i++;
+	    // Avoid infinite loop
+	    if ($i > 1000){
+	      $min_radius2 = 0;
+	      break;
+	    }
+	  }
+  
+  }
+  $min_radius2=round($min_radius2, 2);
+  return $min_radius2;
 }
 
 function IndexSocioEcPLZ($year, $user){
