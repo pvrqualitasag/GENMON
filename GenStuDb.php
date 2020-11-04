@@ -7,7 +7,7 @@ include("connectDataBase.php");		//include function
 $_SESSION['wwwDirectory'] = "/var/www/html/genmon-ch/";		// directory where to save the javaScript file for the OpenLayers mapping
 $_SESSION['wwwDataDirectory'] = "/var/www/html/genmon-ch/Data_files/";	// directory where to save the data files
 $JSwwwDataDirectory = str_replace("\\", "/", $_SESSION['wwwDataDirectory']);		// directory (javaScript format) where to save the data files
-$_SESSION['hostDirectory'] = "http://localhost/genmon-ch/Data_files/";	// host directory needed by the javaScript script to locate the .json file
+$_SESSION['hostDirectory'] = "https://fagr.genmon.ch/gnm/genmon-ch/Data_files/";	// host directory needed by the javaScript script to locate the .json file
 
 //--------------------------------------------------------------------------------------------------------------------------------
 // Getting info from the upload button action of the HTML page
@@ -26,33 +26,41 @@ if($minor < 1) {
 	$_SERVER = $HTTP_SERVER_VARS;
 }
 
-	if(isset($_SESSION['user']))
-	{
-		$user=$_SESSION['user'];
-	}
-	else
-	{
-		$user="Public";
-	}
-	$studref = str_replace("'", "''",$_POST['breed_id']); //manages the apostrophe problems
-	$breed_id=$studref;
-	//$desc = str_replace("'", "''",$_POST['desc']);
-	$desc="desc";
-	//$type=	$_POST['type'];
-	$type="type";
-	$fra = $_FILES["upfil"]["tmp_name"];	// gets the name specified for this given file
+if(isset($_SESSION['user']))
+{
+	$user=$_SESSION['user'];
+}
+else
+{
+	$user="Public";
+}
+echo " * Session user: " . $_SESSION['user'] . "<br>";
+echo " * User: " . $user . "<br>";
+$studref = str_replace("'", "''",$_POST['breed_id']); //manages the apostrophe problems
+$breed_id=$studref;
+echo " * Breed_id: " . $breed_id . "<br>";
+//$desc = str_replace("'", "''",$_POST['desc']);
+$desc="desc";
+//$type=	$_POST['type'];
+$type="type";
+$fra = $_FILES["upfil"]["tmp_name"];	// gets the name specified for this given file
+echo " * File: " . $fra . "<br>";
 
+$filedel=str_replace(' ','_',$_FILES["upfil"]["name"]);
+$til = $JSwwwDataDirectory  . str_replace(' ','_',$_FILES["upfil"]["name"]);	// set the directory where the uploaded file should be copied
+echo " * Til: " . $til . "<br>";
+if (isset($_POST[ 'breed_id' ])){
+  $breed_id = $_POST[ 'breed_id' ];
+}
+if (isset($_POST[ 'breed_name' ])){
+  $breed_name = $_POST[ 'breed_name' ];
+}
+echo " * Breed_id: " . $breed_id . "<br>";
+echo " * Breed_name: " . $breed_name . "<br>";
 
-	$filedel=str_replace(' ','_',$_FILES["upfil"]["name"]);
-	$til = $JSwwwDataDirectory  . str_replace(' ','_',$_FILES["upfil"]["name"]);	// set the directory where the uploaded file should be copied
-	if (isset($_POST[ 'breed_id' ])){
-	$breed_id = $_POST[ 'breed_id' ];
-	}
-	if (isset($_POST[ 'breed_name' ])){
-	$breed_name = $_POST[ 'breed_name' ];
-	}
-
+# copy
 if ($fra != null) {		// if a file has been specified , copy it in the directory $til (Data_files folder)
+	echo " * Copying " . $fra . " to " . $til . "<br>";
 	copy($fra, $til);
 	
 } else {
@@ -64,17 +72,20 @@ if ($fra != null) {		// if a file has been specified , copy it in the directory 
 
 //check the file size
 $file_size = filesize($fra)/1024;
-if($file_size > $conf["max_size"]) {
-	die("The file is too big:  " .
-	$conf["max_size"] .
-	ceil($file_size) . " b");
-}
-
+echo " * File size: " . $file_size . "<br>";
+echo " * Conf maxsize: " . $conf["max_size"]. "<br>";
+#if($file_size > $conf["max_size"]) {
+#	die("The file is too big:  " .
+#	$conf["max_size"] .
+#	ceil($file_size) . " b");
+#}
+echo " * File size: " . $file_size . "<br>";
+#
 $infosfichier = pathinfo($_FILES["upfil"]["name"]);
 $extension_upload = $infosfichier['extension'];
-//allowed extension. Be carefull, if put an extension with 4 letters, should check when the name is created a bit lower in this page
+#//allowed extension. Be carefull, if put an extension with 4 letters, should check when the name is created a bit lower in this page
 $extensions_autorisees = array('csv');
-
+#
 if (in_array($extension_upload, $extensions_autorisees)) // verify extension
 {
 }
@@ -85,6 +96,7 @@ else
 }
 
 
+# start a connection to the db
 $dbh = db_connect(); // connect to database and retrieve the database handle
 
 
@@ -101,7 +113,7 @@ if ($text == null) {
 $lines = explode("\n", $text);	// split the file with respect to the lines
 
 $nrLin = count($lines)-1;		// number of lines containing data (wo headers)
-
+echo " * Number of lines read: " . $nrLin . "<br>";
 //$colNamesTxt = trim($lines[0]); // Deletes tabs and space at the end of the line
 $colNamesTxt = $lines[0];
 $colNamesArray = explode("|", $colNamesTxt);	// put the column names in an array; before \t
@@ -112,10 +124,12 @@ if($colNamesArray[8]==null){  //The file must contain 9 columns
 }
 
 $date=date('Y-m-d-H-i-s');
-exec("mkdir /var/lib/postgresql/incoming/".$date);
+echo " * Create project directory: /var/lib/postgresql/incoming/" . $date . "<br>"; 
+exec("mkdir -p /var/lib/postgresql/incoming/".$date);
+echo " * Move uploaded data ... <br>";
 exec("mv ".$_SESSION['wwwDataDirectory'].$_SESSION['fileName'].".csv /var/lib/postgresql/incoming/".$date."/datafile");
 $param=array();
-$param[]="email=solange.duruz@epfl.ch";
+$param[]="email=none@neverland.no";
 $param[]="breed=".$breed_name;
 $param[]="male=M";
 $param[]="female=F";
