@@ -9,7 +9,8 @@ include("logger.php");
 $log = new Logging();
  
 // set path and name of log file (optional)
-$log->lfile('/tmp/mylog_poprep.log');
+$date=date('YmdHis');
+$log->lfile('/tmp/' . $date . '_mylog_poprep.log');
 
 // write message to the log file
 $log->lwrite(' * Starting PopRep.php ...');
@@ -71,7 +72,9 @@ while ($j<count($table_name_oldnew)){
   pg_query($sql_drop_table4);
   db_disconnect($dbh);
   $log->lwrite(" ** pg_dump for ".$table_name_oldnew[$j][1]);
-  exec('pg_dump -t '.$table_name_oldnew[$j][1].' -U apiis_admin --no-tablespaces -w '.$project_name.' | psql -U geome_admin -w GenMon_CH');
+  $pg_dump_cmd = 'pg_dump -t '.$table_name_oldnew[$j][1].' -U apiis_admin --no-tablespaces -w '.$project_name.' | psql -U geome_admin -w GenMon_CH';
+  $log->lwrite(" ** pg_dump cmd: " . $pg_dump_cmd);
+  exec($pg_dump_cmd);
   $dbh=db_connect();
   $sql_change_schema="ALTER TABLE apiis_admin.".$table_name_oldnew[$j][1]." SET SCHEMA public";
   $log->lwrite(" ** alter schema command: " . $sql_change_schema);
@@ -93,8 +96,9 @@ while ($j<count($table_name_oldnew)){
  
   $j++;
 }
-$log->lwrite(" * Finished renaming tables with count: " . $j);
- 
+$log->lwrite("   ==> Finished renaming tables with count: " . $j);
+
+$log->lwrite(" * Rename indices ..."); 
 $index_name_oldnew=array(array("idx_transfer_1_".$breed_id, "idx_transfer_1"),
   array("idx_transfer_2_".$breed_id, "idx_transfer_2"),
   array("uidx_animal_1_".$breed_id, "uidx_animal_1"),
@@ -103,12 +107,15 @@ $index_name_oldnew=array(array("idx_transfer_1_".$breed_id, "idx_transfer_1"),
   array("uidx_transfer_rowid_".$breed_id, "uidx_transfer_rowid"));
 $j=0;
 while ($j<count($index_name_oldnew)){
+  $sql_drop_index="drop index if exists " . $index_name_oldnew[$j][0];
+  $log->lwrite( " ** Index drop: " . $sql_drop_index);
+  pg_query($sql_drop_index);
   $sql_rename_index="ALTER INDEX if exists ".$index_name_oldnew[$j][1]." RENAME TO ".$index_name_oldnew[$j][0];
   $log->lwrite(" ** Index rename: " . $sql_rename_index);
   pg_query($sql_rename_index);
   $j++;
 }
-$log->lwrite(" * Finished renaming indices with count: " . $j);
+$log->lwrite("   ==> Finished renaming indices with count: " . $j);
  
 $log->lwrite(" * Update sex in breed table ...");
 $sql_male_rename = "UPDATE breed".$breed_id."_data SET db_sex=2 where db_sex=117";
@@ -117,19 +124,34 @@ pg_query($sql_male_rename); //in the other database, sex saved as 117 for males 
 $sql_female_rename = "UPDATE breed".$breed_id."_data SET db_sex=3 where db_sex=118";
 $log->lwrite(" ** SQL rename for females: " . $sql_female_rename);
 pg_query($sql_female_rename);
-$log->lwrite("   ... done");
+$log->lwrite("   ==> ... done");
 
 # //Also the breed id is always 119...
 # //change -9999 data to null data (if no data would not be uploaded for plz, intro, inb_gen and cryo)
 # //To be checked
+
 $log->lwrite(" * Update mvc for extended pedigree columns ...");
-$columns=array('plz', 'introgression', 'inb_gen', 'cryo');
+$columns=array('plz', 'introgression', 'inb_gen', 'cryo_cons');
 for ($i = 0; $i < count($columns); $i++) {
-  $sql_no_data="update breed".$breed_id."_data set ".$columns[$i]."=NULL where ".$columns[$i]."=-9999";
+  $sql_no_data="update breed".$breed_id."_data set ".$columns[$i]."=NULL where ".$columns[$i]."='-9999'";
   $log->lwrite(" ** update stmt: " . $sql_no_data);
   pg_query($sql_no_data);
 }
-$log->lwrite("   ... done");
+$log->lwrite("   ==> ... done");
+
+# Cast column plz to integer to match plz column in other tables
+$log->lwrite(" * Casting columns in breed_data ...");
+$sql_cast=array();
+$sql_cast[]="alter table breed" . $breed_id . "_data alter column plz TYPE INTEGER USING (plz::integer)";
+$sql_cast[]="alter table breed" . $breed_id . "_data alter column inb_gen TYPE REAL USING (inb_gen::real);";
+$sql_cast[]="alter table breed" . $breed_id . "_data alter column introgression TYPE REAL USING (introgression::real);";
+$i=0;
+while ($i<count($sql_cast)){
+  $log->lwrite(" ** SQL Cast: " . $sql_cast[$i]);
+  pg_query($sql_cast[$i]);
+  $i++;
+}
+$log->lwrite("   ==> ... done");
  
  
 //Update the effective population size (Ne) table ! To put back
@@ -146,8 +168,8 @@ pg_query($sql_ne_deltaF);
 //Add the inbreeding to all animals from the animal table
 $log->lwrite(" * Add inbreeding to animals ...");
 $sql_breed_data=array();
-$sql_breed_data[] = "drop table if exists breed".$breed_id."_data";
-$sql_breed_data[] = "create table breed".$breed_id."_data as (select * from animal)";
+# $sql_breed_data[] = "drop table if exists breed".$breed_id."_data";
+# $sql_breed_data[] = "create table breed".$breed_id."_data as (select * from animal)";
 $sql_breed_data[]="alter table breed".$breed_id."_data add column inbreeding real";
 $sql_breed_data[]="update breed".$breed_id."_data set inbreeding =
 (select i.inbreeding
@@ -159,7 +181,7 @@ while ($i<count($sql_breed_data)){
  pg_query($sql_breed_data[$i]);
  $i++;
 }
-$log->lwrite(" * Number of sql-statements run: " . $i);
+$log->lwrite("   ==> ... done with number of sql-statements run: " . $i);
  
 // Put the inbreeding coefficient by plz. Calc mean/max inb  and number individuals over the last generation interval (GI)
 //know the last year of data
@@ -168,7 +190,7 @@ $sql_max_year="SELECT distinct max(EXTRACT(YEAR FROM birth_dt)) as max_year FROM
 $log->lwrite(" ** SQL max year: " . $sql_max_year);
 $max_year0 = pg_query($sql_max_year);
 $max_year=pg_fetch_result($max_year0,0,0);
-$log->lwrite(" * Max year: " . $max_year);
+$log->lwrite("   ==> ... done with max year: " . $max_year);
  
 //know the generation interval
 $log->lwrite(" * Generation interval ...");
@@ -176,7 +198,7 @@ $sql_GI="SELECT round(pop,0) FROM tmp1_gen ORDER BY year DESC OFFSET 3 LIMIT 1";
 $log->lwrite(" ** SQL GI: " . $sql_GI);
 $GI0=pg_query($sql_GI);
 $GI=pg_fetch_result($GI0,0,0);
-$log->lwrite("   ... GI = " . $GI);
+$log->lwrite("   ==> ... done with GI = " . $GI);
  
  
 //Create the bree_inb_plz table (with mean inbreeding/introgression and # animal over last GI per plz)
@@ -248,7 +270,7 @@ $log->lwrite(" ** SQL Mean Gen: " . $sql_mean_gen);
 pg_query($sql_mean_gen);
 $log->lwrite("   ... done");
  
-# //mean introgression
+//mean introgression
 $log->lwrite(" * Mean introgression ...");
 $sql_mean_introgr= "UPDATE breed".$breed_id."_inb_plz
 SET mean_introgr_lastgi =
@@ -375,8 +397,8 @@ for($i=1;$i<7;$i++){ //calculate over last 5 years (without taking the very last
 }
 $trend_male=linear_regression($years, $males);
 $trend_female=linear_regression($years, $females);
-$change_male=round(floatval($trend_male[m])/floatval(end($males))*100,2);
-$change_female=round(floatval($trend_female[m])/floatval(end($females))*100,2);
+$change_male=round(floatval($trend_male["m"])/floatval(end($males))*100,2);
+$change_female=round(floatval($trend_female["m"])/floatval(end($females))*100,2);
 $sql_breed_summary[]="UPDATE summary SET trend_males=".$change_male." WHERE breed_id=".$breed_id;
 $sql_breed_summary[]="UPDATE summary SET trend_females=".$change_female." WHERE breed_id=".$breed_id;
 $sql_breed_summary[]="UPDATE summary SET ped_compl=(
