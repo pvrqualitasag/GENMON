@@ -7,7 +7,7 @@ T. Produit
 
 // connects to Postgres database and returns the PostgreSQL connection resource $dbh (database handle)
 function db_connect() {
-	$dbh = pg_connect("host=localhost port=5432 dbname=GenMon_CH user=geome_admin password=geome");
+	$dbh = pg_connect("host=localhost port=5433 dbname=GenMon_CH user=geome_admin password=geome");
 	return $dbh;
 }
 

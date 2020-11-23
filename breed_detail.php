@@ -10,6 +10,20 @@
 		<!--<script type="text/javascript" src="js/cssrefresh.js"></script>-->
 	</head>    
 <?php 
+
+// Logging
+include("logger.php");
+# logging
+// Logging class initialization
+$log = new Logging();
+
+// set path and name of log file (optional)
+$date=date('YmdHis');
+$log->lfile('/tmp/' . $date . '_mylog_breed_detail.log');
+
+// write message to the log file
+$log->lwrite(' * Starting breed_detail.php ...');
+
 include("header.php");
 include("connectDataBase.php");
 include("FunctionsCalcIndex.php");
@@ -21,7 +35,7 @@ if (isset($_POST[ 'breed_id' ])){
 /*if (isset($_POST[ 'breed_name' ])){
 	$breed_name = $_POST[ 'breed_name' ];
 }*/
-
+$log->lwrite(' * Breed ID: ' . $breed_id);
 
 
 $sql_long_name="SELECT long_name FROM codes where db_code=".$breed_id.""; 
@@ -38,13 +52,17 @@ $owner=pg_fetch_result($result_owner, 0, 0);
 $sql_species="SELECT species FROM summary where breed_id=".$breed_id.""; 
 $result_species=pg_query($sql_species);
 $species=pg_fetch_result($result_species, 0, 0);
-
+$log->lwrite(' * Owner: ' . $owner);
+$log->lwrite(' * Species: ' . $species);
 if(isset($_POST["Ne"])==1){
 	$sql_set_Ne="update summary set ne=".$_POST["Ne"]." where breed_id=".$_POST["breed_id"].""; 
 	pg_query($sql_set_Ne);
+	$log->lwrite(' * Ne set to ' . $_POST["Ne"]);
 	if(isset($_SESSION['user']) && $_SESSION['user']==$owner){
-	$index_demo=IndexCalc($breed_id,'demo', $_SESSION['user'], $species); //FunctionsCalcIndex.php
-	$index_final=IndexCalc($breed_id,'final', $_SESSION['user'], $species); //FunctionsCalcIndex.php
+	  $index_demo=IndexCalc($breed_id,'demo', $_SESSION['user'], $species); //FunctionsCalcIndex.php
+	  $index_final=IndexCalc($breed_id,'final', $_SESSION['user'], $species); //FunctionsCalcIndex.php
+          $log->lwrite(' * Compute index_demo: ' . $index_demo);
+	  $log->lwrite(' * Computed index_final: ' . $index_final);
 	}
 }
 ?>
@@ -108,7 +126,8 @@ echo "The <strong>mapping service</strong> is not available for this breed since
 }
 ?>
 <a style="color:black;" href="pdf/Population-<?php echo $breed_name; ?>.pdf" target="_blank"><strong>PDF: PopRep Population Report <?php echo $breed_name; ?></strong></a><br /><br />
-<a style="color:black;" href="pdf/Inbreeding-<?php echo $breed_name; ?>.pdf" target="_blank"><strong>PDF: PopRep Inbreeding Report</strong></a>
+<a style="color:black;" href="pdf/Inbreeding-<?php echo $breed_name; ?>.pdf" target="_blank"><strong>PDF: PopRep Inbreeding Report</strong></a><br /><br />
+<a style="color:black;" href="pdf/Monitoring-<?php echo $breed_name; ?>.pdf" target="_blank"><strong>PDF: PopRep Monitoring Report</strong></a>
 	</div> <!-- end box-->
 	
 <br />
@@ -550,5 +569,7 @@ else{
 <?php
 include("footer.php");
 db_disconnect($dbh);
+# // close log file
+$log->lclose();
 ?>
 </html>

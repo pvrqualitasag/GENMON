@@ -144,6 +144,7 @@ $log->lwrite(" * Casting columns in breed_data ...");
 $sql_cast=array();
 $sql_cast[]="alter table breed" . $breed_id . "_data alter column plz TYPE INTEGER USING (plz::integer)";
 $sql_cast[]="alter table breed" . $breed_id . "_data alter column inb_gen TYPE REAL USING (inb_gen::real);";
+$sql_cast[]="update breed" . $breed_id . "_data set introgression=replace(introgression, ',', '.') where introgression != '0' and introgression != '1';";
 $sql_cast[]="alter table breed" . $breed_id . "_data alter column introgression TYPE REAL USING (introgression::real);";
 $i=0;
 while ($i<count($sql_cast)){
@@ -316,6 +317,7 @@ where breed_id=".$breed_id."";
 $sql_breed_summary[] = "UPDATE summary SET num_ind = ".pg_fetch_result($summary1, 0, 1)."
 where breed_id=".$breed_id."";
 $sql_breed_summary[] = "UPDATE summary SET gi=".$GI." where breed_id=".$breed_id."";
+#$sql_breed_summary[] = "UPDATE summary SET ne=null where breed_id=".$breed_id."";
 $sql_breed_summary[] = "UPDATE summary SET ne=(SELECT ne FROM breed".$breed_id."_ne where method = 'Ne_DeltaFp') where breed_id=".$breed_id."";
 $log->lwrite("   ... done");
  

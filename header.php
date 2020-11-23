@@ -1,11 +1,11 @@
 <header><!--<div id="header">-->
 	<div id="logo" >
-		<h1><a href="http://localhost/genmon-ch/index.php"><strong><font color="#FFFFFF">GenMon-CH</font></strong></a></h1>
+		<h1><a href="https://fagr.genmon.ch/gnm/genmon-ch/index.php"><strong><font color="#FFFFFF">GenMon-CH</font></strong></a></h1>
 	</div><!-- end #logo -->
 	<div id="user" >
 		
 		<?php 
-			$url="http://localhost/genmon-ch";
+			$url="https://fagr.genmon.ch/gnm/genmon-ch";
 			include("/var/www/html/genmon-ch/membres/sessStarted.php");
 			if ( is_session_started() === FALSE ) session_start();
 			

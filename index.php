@@ -60,7 +60,7 @@
 							<th>Number individals<br />last GI</th> 
 							<th>Pedigree compl.<br />6th gen, last GI</th> 
 							<th>Average inbreeding<br />last GI</th> 
-							<th>Eff Pop Size<br /> (Method Ne_DeltaFp)</th>
+							<th>Effective pop <br />size (Ne_DeltaFp)</th>
 							<th>Trend males <br />last 5 years</th>
 							<th>Trend females <br />last 5 years</th>
 							<th>Pedig Index<br />(0-1) </th>

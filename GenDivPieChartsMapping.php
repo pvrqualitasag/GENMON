@@ -15,7 +15,7 @@ include("connectDataBase.php");		// include the file for the connection to the d
 $_SESSION['wwwDirectory'] = "/var/www/html/genmon-ch/";		// directory where to save the javaScript file for the OpenLayers mapping
 $_SESSION['wwwDataDirectory'] = "/var/www/html/genmon-ch/Data_files/";	// directory where to save the data files
 $JSwwwDataDirectory = str_replace("\\", "/", $_SESSION['wwwDataDirectory']);		// directory (javaScript format) where to save the data files
-$_SESSION['hostDirectory'] = "http://localhost/genmon-ch/Data_files/";	// host directory needed by the javaScript script to locate the .json file
+$_SESSION['hostDirectory'] = "https://fagr.genmon.ch/gnm/genmon-ch/Data_files/";	// host directory needed by the javaScript script to locate the .json file
 
 
 //--------------------------------------------------------------------------------------------------------------------------------

@@ -76,7 +76,7 @@ function createJSfile($nameCol,$nameXML,$wwwDirectory,$fileName) {//not used for
 	var map, layer, select, control, meaninb=0.00;
 		
         function init(){
-			OpenLayers.ProxyHost= \"http://localhost/cgi-bin/proxy.cgi?url=\";
+			OpenLayers.ProxyHost= \"https://fagr.genmon.ch/gnm/cgi-bin/proxy.cgi?url=\";
             map = new OpenLayers.Map(\"map\", {
 			projection: new OpenLayers.Projection(\"EPSG:3857\"),
 			displayProjection: new OpenLayers.Projection(\"EPSG:3857\"),
@@ -95,9 +95,9 @@ function createJSfile($nameCol,$nameXML,$wwwDirectory,$fileName) {//not used for
             //changed the projection and bounds of the map
 			layer = new OpenLayers.Layer.WMS(
                \"States WMS/WFS\",
-               \"http://localhost:8085/geoserver/cite/wms?\",
+               \"https://fagr.genmon.ch/gnm:8085/geoserver/cite/wms?\",
                {layers: \"cite:plzo_plz\",
-				sld: 'http://localhost/genomap/".$nameXML.".xml',
+				sld: 'https://fagr.genmon.ch/gnm/genomap/".$nameXML.".xml',
 				format: 'image/gif'
 				}
             );
