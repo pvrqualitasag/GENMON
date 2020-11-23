@@ -2,6 +2,20 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <link rel="stylesheet" href="style.css" media="screen"/>
 <?php
+
+// Logging
+include("logger.php");
+# logging
+// Logging class initialization
+$log = new Logging();
+
+// set path and name of log file (optional)
+$date=date('YmdHis');
+$log->lfile('/tmp/' . $date . '_mylog_change_weight_demo.log');
+
+// write message to the log file
+$log->lwrite(' * Starting ChangeWeightDemo.php ...');
+
 include("header.php");
 include("FunctionsCalcIndex.php");
 $string_error="";
@@ -38,6 +52,7 @@ if(isset($_GET["error"])==1){
 }
 db_disconnect($dbh);
 if(isset($_POST["00"])==1){
+	$log->lwrite(' * Enter 00 ...');
 	$dbh=db_connect();
 	if(isset($_SESSION['user']) && isset($_POST["species"])){
 		$user=$_SESSION['user'];
@@ -52,9 +67,9 @@ if(isset($_POST["00"])==1){
 			$thres0=pg_query($sql_thres);
 			$thres=pg_fetch_result($thres0,0,0);
 			if($thres<>0){
-			db_disconnect($dbh);
-			header("Location:ChangeWeightDemo.php?error=threshold");
-			exit();
+			  db_disconnect($dbh);
+			  header("Location:ChangeWeightDemo.php?error=threshold");
+			  exit();
 			}
 			else{
 				//IF RECALCULATE THE GLOBAL INDEX FOR ALL BREED WHEN CHANGING THE WEIGHTS OF CRITERIA. NOT NEC. GOOD...
@@ -74,12 +89,16 @@ if(isset($_POST["00"])==1){
 $dbh=db_connect($dbh);
 if(isset($_SESSION['user'])) //if user is logged show all weights for the species
 	{
-	$user=$_SESSION['user'];
+		$user=$_SESSION['user'];
+		$log->lwrite(' * Change weight for user: ' . $user);
 	$sql_select_species="select distinct species from thres_weight where owner='".$user."' and species<>'default' order by species";
 	$result_select_species=pg_query($sql_select_species);
 	for($i=0;$i<pg_num_rows($result_select_species);$i++){
 		$species=pg_fetch_result($result_select_species,$i,0);
 		echo "<b> Species: ".$species." </b><br /><br />";
+		$log->lwrite(' * Table name: ' . $table_name);
+		$log->lwrite(' * User: ' . $user);
+		$log->lwrite(' * Species: ' . $species);
 		change_weight_form($table_name,'demo', $user, $species); 
 	}
 	
@@ -106,5 +125,7 @@ Make sure that the sum of the weight equals 1!<br />
 
 db_disconnect($dbh);
 include("footer.php");
+# // close log file
+$log->lclose();
 ?>
 </html>
