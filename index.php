@@ -60,7 +60,7 @@
 							<th>Number individals<br />last GI</th> 
 							<th>Pedigree compl.<br />6th gen, last GI</th> 
 							<th>Average inbreeding<br />last GI</th> 
-							<th>Effective pop <br />size range</th>
+							<th>Eff Pop Size<br /> (Method Ne_DeltaFp)</th>
 							<th>Trend males <br />last 5 years</th>
 							<th>Trend females <br />last 5 years</th>
 							<th>Pedig Index<br />(0-1) </th>
@@ -96,8 +96,11 @@
 									$ne2='100-200';
 									break;
 									case 250:
-									$ne2='&gt;200';
+									$ne2='200-300';
 									break;
+									case 350:
+									$ne2='&gt;300';
+									break;	
 									
 								}
 							?>
@@ -111,7 +114,7 @@
 								<td><?php echo pg_fetch_result($data, $i, "\"avg_inb\""); 
 								$color=ColorCode(pg_fetch_result($data, $i, "\"avg_inb\""),'avg_inb', pg_fetch_result($data, $i, "\"owner\""), pg_fetch_result($data, $i, "\"species\""));?> 
 								<font color="<?php echo $color ?>">&#9632;</font></td>
-								<td><?php echo $ne2; 
+								<td><?php echo $ne; 
 								$color=ColorCode($ne,'ne', pg_fetch_result($data, $i, "\"owner\""), pg_fetch_result($data, $i, "\"species\""));?> 
 								<font color="<?php echo $color ?>">&#9632;</font></td>
 								<td><?php echo pg_fetch_result($data, $i, "\"trend_males\""); 
