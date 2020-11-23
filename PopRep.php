@@ -316,7 +316,7 @@ where breed_id=".$breed_id."";
 $sql_breed_summary[] = "UPDATE summary SET num_ind = ".pg_fetch_result($summary1, 0, 1)."
 where breed_id=".$breed_id."";
 $sql_breed_summary[] = "UPDATE summary SET gi=".$GI." where breed_id=".$breed_id."";
-$sql_breed_summary[] = "UPDATE summary SET ne=null where breed_id=".$breed_id."";
+$sql_breed_summary[] = "UPDATE summary SET ne=(SELECT ne FROM breed".$breed_id."_ne where method = 'Ne_DeltaFp') where breed_id=".$breed_id."";
 $log->lwrite("   ... done");
  
 $log->lwrite(" * Including FunctionsCalcIndex ...");
