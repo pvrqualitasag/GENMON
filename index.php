@@ -135,7 +135,7 @@
 								<td><?php echo pg_fetch_result($data, $i, "\"avg_inb\""); 
 								$color=ColorCode(pg_fetch_result($data, $i, "\"avg_inb\""),'avg_inb', pg_fetch_result($data, $i, "\"owner\""), pg_fetch_result($data, $i, "\"species\""));?> 
 								<font color="<?php echo $color ?>">&#9632;</font></td>
-								<td><?php echo $$ne_dfp_result; 
+								<td><?php echo $ne_dfp_result; 
 								$color=ColorCode($ne_dfp_result,'ne', pg_fetch_result($data, $i, "\"owner\""), pg_fetch_result($data, $i, "\"species\""));?> 
 								<font color="<?php echo $color ?>">&#9632;</font></td>
 								<td><?php echo pg_fetch_result($data, $i, "\"trend_males\""); 
