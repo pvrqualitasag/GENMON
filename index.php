@@ -91,13 +91,6 @@
 						<?php	
 							
 							for($i=0;$i<pg_num_rows($data);$i++){ //loop on the breeds to be shown
-							  $ne_breed_id=pg_fetch_result($data, $i, 0);
-							  $log->lwrite(' * Breed: ' . $ne_breed_id);
-							  $sql_ne_dfp="SELECT Ne FROM breed".$ne_breed_id."_ne where method = 'Ne_DeltaFp'";
-							  $log->lwrite(' * SQL Ne DFP: ' . $sql_ne_dfp);
-							  $ne_dfp=pg_query($sql_ne_dfp);
-							  $ne_dfp_result=pg_fetch_result($ne_dfp, 0, 0);
-							  $log->lwrite(' * Ne DFP: ' . $ne_dfp_result);
 								$ne2='';
 								$ne=pg_fetch_result($data, $i, "\"ne\"");
 								switch ($ne){
@@ -135,8 +128,8 @@
 								<td><?php echo pg_fetch_result($data, $i, "\"avg_inb\""); 
 								$color=ColorCode(pg_fetch_result($data, $i, "\"avg_inb\""),'avg_inb', pg_fetch_result($data, $i, "\"owner\""), pg_fetch_result($data, $i, "\"species\""));?> 
 								<font color="<?php echo $color ?>">&#9632;</font></td>
-								<td><?php echo $ne_dfp_result; 
-								$color=ColorCode($ne_dfp_result,'ne', pg_fetch_result($data, $i, "\"owner\""), pg_fetch_result($data, $i, "\"species\""));?> 
+								<td><?php echo $ne; 
+								$color=ColorCode($ne,'ne', pg_fetch_result($data, $i, "\"owner\""), pg_fetch_result($data, $i, "\"species\""));?> 
 								<font color="<?php echo $color ?>">&#9632;</font></td>
 								<td><?php echo pg_fetch_result($data, $i, "\"trend_males\""); 
 								$color=ColorCode(pg_fetch_result($data, $i, "\"trend_males\""),'trend_males',pg_fetch_result($data, $i, "\"owner\""), pg_fetch_result($data, $i, "\"species\""));?> 

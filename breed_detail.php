@@ -55,9 +55,15 @@ $species=pg_fetch_result($result_species, 0, 0);
 $log->lwrite(' * Owner: ' . $owner);
 $log->lwrite(' * Species: ' . $species);
 if(isset($_POST["Ne"])==1){
-	$sql_set_Ne="update summary set ne=".$_POST["Ne"]." where breed_id=".$_POST["breed_id"].""; 
+	$log->lwrite(' * Breed: ' . $breed_id);
+	$sql_ne_dfp="SELECT Ne FROM breed".$breed_id."_ne where method = 'Ne_DeltaFp'";
+	$log->lwrite(' * SQL Ne DFP: ' . $sql_ne_dfp);
+	$ne_dfp=pg_query($sql_ne_dfp);
+	$ne_dfp_result=pg_fetch_result($ne_dfp, 0, 0);
+	$log->lwrite(' * Ne DFP: ' . $ne_dfp_result);
+	$sql_set_Ne="update summary set ne=".$ne_dfp_result." where breed_id=".$_POST["breed_id"].""; 
 	pg_query($sql_set_Ne);
-	$log->lwrite(' * Ne set to ' . $_POST["Ne"]);
+	$log->lwrite(' * Ne set to ' . $ne_dfp_result);
 	if(isset($_SESSION['user']) && $_SESSION['user']==$owner){
 	  $index_demo=IndexCalc($breed_id,'demo', $_SESSION['user'], $species); //FunctionsCalcIndex.php
 	  $index_final=IndexCalc($breed_id,'final', $_SESSION['user'], $species); //FunctionsCalcIndex.php
