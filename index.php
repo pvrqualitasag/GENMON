@@ -94,7 +94,7 @@
 							  $ne_breed_id=pg_fetch_result($data, $i, 0);
 							  $log->lwrite(' * Breed: ' . $ne_breed_id);
 							  $sql_ne_dfp="SELECT * FROM breed".$ne_breed_id."_ne where method = 'Ne_DeltaFp'";
-							  $log->lwrite(' * SQL Ne DFP: ' . $$sql_ne_dfp);
+							  $log->lwrite(' * SQL Ne DFP: ' . $sql_ne_dfp);
 							  $ne_dfp_result=pg_fetch_result($sql_ne_dfp, 0, 0);
 							  $log->lwrite(' * Ne DFP: ' . $ne_dfp_result);
 								$ne2='';
