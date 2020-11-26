@@ -9,20 +9,6 @@
 		<!--<script type="text/javascript" src="js/cssrefresh.js"></script>-->
 	</head>    
 	<?php 
-	// Logging
-  include("logger.php");
-  # logging
-  // Logging class initialization
-  $log = new Logging();
-
-  // set path and name of log file (optional)
-  $date=date('YmdHis');
-  $log->lfile('/tmp/' . $date . '_mylog_index.log');
-
-  // write message to the log file
-  $log->lwrite(' * Starting index.php ...');
-
-
 		include("header.php");
 		include("connectDataBase.php");
 		$dbh=db_connect();
