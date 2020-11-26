@@ -9,6 +9,20 @@
 		<!--<script type="text/javascript" src="js/cssrefresh.js"></script>-->
 	</head>    
 	<?php 
+	// Logging
+  include("logger.php");
+  # logging
+  // Logging class initialization
+  $log = new Logging();
+
+  // set path and name of log file (optional)
+  $date=date('YmdHis');
+  $log->lfile('/tmp/' . $date . '_mylog_index.log');
+
+  // write message to the log file
+  $log->lwrite(' * Starting index.php ...');
+
+
 		include("header.php");
 		include("connectDataBase.php");
 		$dbh=db_connect();
@@ -78,8 +92,11 @@
 							
 							for($i=0;$i<pg_num_rows($data);$i++){ //loop on the breeds to be shown
 							  $ne_breed_id=pg_fetch_result($data, $i, 0);
+							  $log->lwrite(' * Breed: ' . $ne_breed_id);
 							  $sql_ne_dfp="SELECT * FROM breed".$ne_breed_id."_ne where method = 'Ne_DeltaFp'";
+							  $log->lwrite(' * SQL Ne DFP: ' . $$sql_ne_dfp);
 							  $ne_dfp_result=pg_fetch_result($sql_ne_dfp, 0, 0);
+							  $log->lwrite(' * Ne DFP: ' . $ne_dfp_result);
 								$ne2='';
 								$ne=pg_fetch_result($data, $i, "\"ne\"");
 								switch ($ne){
