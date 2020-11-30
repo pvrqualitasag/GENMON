@@ -107,7 +107,13 @@ if(isset($_POST["Ne"])==1){
 		<form action="AddStudy.php" method="post"> Or go to the assisted upload section 
 			<input type="hidden" name="breed_id" value="<?php echo $breed_id;?>">
 			<input type="submit" value="Assisted upload" /> 
-		</form><br /><br/>
+		</form>
+		<br/>
+		<form action="UpdateBreed.php" method="post"> Or update breed information
+		  <input type="hidden" name="breed_id" value="<?php echo $breed_id;$log->lwrite(' * Update info for breed: ' . $breed_id);?>">
+			<input type="submit" value="Update breed information" /> 
+		</form>
+		<br /><br/>
 		<?php
 		}
 		else{
