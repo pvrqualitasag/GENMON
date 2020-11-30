@@ -15,6 +15,10 @@ $log->lwrite(' * Starting GenAnimalUpdate.php ...');
 //This page updates information about a breed (UpdateBreed.php)
 include("connectDataBase.php");
 $dbh=db_connect();
+if(isset($_POST['breed_id'])){
+  $breed_id=$_POST['breed_id'];
+}
+$log->lwrite(' * Breed ID: ' . $breed_id);
 //Change the information depending on what the user has entered
 if(isset($_POST['cultural_value']) && isset($_POST['cultural_value_trend']) && isset($_POST['number_farm']) && isset($_POST['number_farm_past']) && isset($_POST['frozen_semen']) && isset($_POST['cryo_plan'])){
 	$cultural_score=($_POST['cultural_value']+$_POST['cultural_value_trend'])/2;
@@ -42,5 +46,5 @@ pg_query($sql_update_cryovalue);
 # // close log file
 $log->lclose();
 $_SESSION['breed_id']=$breed_id;
-header("Location:index.php");
+header("Location:breed_detail.php");
 ?>
