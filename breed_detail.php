@@ -67,7 +67,7 @@ if(isset($_POST["Ne"])==1){
 	if(isset($_SESSION['user']) && $_SESSION['user']==$owner){
 	  $index_demo=IndexCalc($breed_id,'demo', $_SESSION['user'], $species); //FunctionsCalcIndex.php
 	  $index_final=IndexCalc($breed_id,'final', $_SESSION['user'], $species); //FunctionsCalcIndex.php
-          $log->lwrite(' * Compute index_demo: ' . $index_demo);
+    $log->lwrite(' * Compute index_demo: ' . $index_demo);
 	  $log->lwrite(' * Computed index_final: ' . $index_final);
 	}
 }
