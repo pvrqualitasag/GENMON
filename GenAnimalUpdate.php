@@ -13,6 +13,7 @@ $log->lfile('/tmp/' . $date . '_mylog_GenAnimalUpdate.log');
 $log->lwrite(' * Starting GenAnimalUpdate.php ...');
 
 //This page updates information about a breed (UpdateBreed.php)
+include("FunctionsCalcIndex.php");
 include("connectDataBase.php");
 $dbh=db_connect();
 if(isset($_POST['breed_id'])){
@@ -60,12 +61,11 @@ $result_species=pg_query($sql_species);
 $species=pg_fetch_result($result_species, 0, 0);
 $log->lwrite(' * Owner: ' . $owner);
 $log->lwrite(' * Species: ' . $species);
-if(isset($_SESSION['user']) && $_SESSION['user']==$owner){
-  $index_demo=IndexCalc($breed_id,'demo', $_SESSION['user'], $species); //FunctionsCalcIndex.php
-  $index_final=IndexCalc($breed_id,'final', $_SESSION['user'], $species); //FunctionsCalcIndex.php
-  $log->lwrite(' * Compute index_demo: ' . $index_demo);
-  $log->lwrite(' * Computed index_final: ' . $index_final);
-}
+$log->lwrite(' * User: ' . $_SESSION['user']);
+$index_demo=IndexCalc($breed_id,'demo', $owner, $species); //FunctionsCalcIndex.php
+$index_final=IndexCalc($breed_id,'final', $owner, $species); //FunctionsCalcIndex.php
+$log->lwrite(' * Compute index_demo: ' . $index_demo);
+$log->lwrite(' * Computed index_final: ' . $index_final);
 
 
 # disconnect from db
