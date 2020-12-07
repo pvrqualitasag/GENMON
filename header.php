@@ -22,7 +22,6 @@
 			<input type="button" value="Logout" onclick="window.location='membres/logout.php'"/>
 			<p>
 				<b>
-					<br />
 					&nbsp;
 					&nbsp;
 					&nbsp;
@@ -57,8 +56,6 @@
 		<input type="submit" value="login"/>
 		</form> <br />
 		<b>
-		<a href="<?php echo $url;?>/membres/reinitpwd.php">Reinitialize password</a>
-		<a href="<?php echo $url;?>/membres/signUp.php">&nbsp; &nbsp; &nbsp; Sign Up</a>		
 		<a href="<?php echo $url;?>/tutorial.php">&nbsp; &nbsp; &nbsp; Tutorial</a>
 		<a href="<?php echo $url;?>/pdf/data_sample.csv">&nbsp; &nbsp; &nbsp; Example data</a>
 		</b>
