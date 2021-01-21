@@ -77,7 +77,8 @@ for ($i = 0; $i < $nrLin-1; $i++) {		// for each line of my table called $lines.
 }
 $log->lwrite(' * Nr of lines after check: ' . count($linesOK));
 
-$sql_drop_dump="drop table ofs_dump";
+$sql_drop_dump="drop table if exists ofs_dump";
+$log->lwrite(' * SQL drop dump: ' . $sql_drop_dump);
 pg_query($sql_drop_dump);
 if(isset($_POST['year'])==1){
 	$year=$_POST['year'];
@@ -114,7 +115,7 @@ for ($j=0;$j<$nrCol; $j++){
 	(select b.".$_POST['column'.$j]." from ofs_dump b
 	where b.num_ofs = a.num_ofs)";
 #echo $sql_join_ofs;
-$log->lwrite(' * Join ofs j: ' . $j . ' -- ' . $sql_join_ofs); 
+  $log->lwrite(' * Join ofs j: ' . $j . ' -- ' . $sql_join_ofs); 
 	pg_query($sql_join_ofs);
 }
 
@@ -176,7 +177,7 @@ if ($not_empty==$num_field){
 	}
 	$sql_drop_table="drop table ofs_".$year;
 	$log->lwrite(' * SQL drop table: ' . $sql_drop_table);
-	pg_query($sql_drop_table);
+	#pg_query($sql_drop_table);
 	$log->lwrite(' * Compute IndexSocioEcPLZ for year: ' . $year);
 	IndexSocioEcPLZ($year); //function in FunctionsCalcIndex
 }

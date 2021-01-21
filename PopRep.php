@@ -2,18 +2,23 @@
 //This page formats the animal table (uploaded in the GenAnimal.php -from assisted upload- or GenStuDB.php -directly right format-) in the way PopRep likes it (only integer for animal IDs, ordered by birth_dt, ...) and run the PopRep code
 //At the end, it aggregates things for the GenMon application by PLZ,.. store restults in the summary table
 //
-// Logging
-include("logger.php");
-# logging
-// Logging class initialization
-$log = new Logging();
+// set debugging flag
+$debug=TRUE;
+// Logging, in case when $debug is set to TRUE
+if ($debug){
+  include("logger.php");
+  # logging
+  // Logging class initialization
+  $log = new Logging();
  
-// set path and name of log file (optional)
-$date=date('YmdHis');
-$log->lfile('/tmp/' . $date . '_mylog_poprep.log');
+  // set path and name of log file (optional)
+  $date=date('YmdHis');
+  $log->lfile('/tmp/' . $date . '_mylog_poprep.log');
 
-// write message to the log file
-$log->lwrite(' * Starting PopRep.php ...');
+  // write message to the log file
+  $log->lwrite(' * Starting PopRep.php ...');
+
+}
  
 // db connection
 include("connectDataBase.php");
@@ -32,20 +37,22 @@ $breed_name0=pg_query($sql_breed_name);
 $breed_name=pg_fetch_result($breed_name0,0,0);
  
 # check parameters before calling poprep
-$log->lwrite(" * Breed ID: " . $breed_id);
-$log->lwrite(" * Breed Name: " . $breed_name);
-$log->lwrite(" * User:       " . $user);
- 
+if ($debug){
+  $log->lwrite(" * Breed ID: " . $breed_id);
+  $log->lwrite(" * Breed Name: " . $breed_name);
+  $log->lwrite(" * User:       " . $user);
+}
+
 #//Run the poprep code
 exec('export APIIS_HOME=/home/popreport/production/apiis;/home/popreport/production/apiis/bin/./process_uploads.sh -i /var/lib/postgresql/incoming -l /home/quagadmin/gnm/gnmlog/popreport.log -u www-data -g www-data -a /home/popreport/production/apiis');
-$log->lwrite(" * Poprep is done ...");
+if ($debug){$log->lwrite(" * Poprep is done ...");}
  
 #//Get the name of the project
 $dbh=db_connect();
 $sql_dbname="SELECT datname FROM pg_database where datname like 'PPP%'";
 $dbname0=pg_query($sql_dbname);
 $project_name=pg_fetch_result($dbname0, 0, 0);
-$log->lwrite(" * Project: " . $project_name);
+if ($debug){$log->lwrite(" * Project: " . $project_name);}
  
 //transfer most important tables (temp tables are deleted right after)
 //Rename important table
@@ -61,7 +68,7 @@ $table_name_oldnew=array(array("breed".$breed_id."_inbryear", "tmp2_table3"),
  
 $j=0;
 while ($j<count($table_name_oldnew)){
-  $log->lwrite(" ** table: new - " . $table_name_oldnew[$j][0] . " | old - " . $table_name_oldnew[$j][1]);
+  if ($debug){$log->lwrite(" ** table: new - " . $table_name_oldnew[$j][0] . " | old - " . $table_name_oldnew[$j][1]);}
   $sql_drop_table="DROP TABLE if exists ".$table_name_oldnew[$j][1];
   $sql_drop_table2="DROP TABLE if exists ".$table_name_oldnew[$j][0];
   $sql_drop_table3="DROP TABLE if exists apiis_admin.".$table_name_oldnew[$j][1];
@@ -71,20 +78,20 @@ while ($j<count($table_name_oldnew)){
   pg_query($sql_drop_table3);
   pg_query($sql_drop_table4);
   db_disconnect($dbh);
-  $log->lwrite(" ** pg_dump for ".$table_name_oldnew[$j][1]);
+  if ($debug){$log->lwrite(" ** pg_dump for ".$table_name_oldnew[$j][1]);}
   $pg_dump_cmd = 'pg_dump -t '.$table_name_oldnew[$j][1].' -U apiis_admin --no-tablespaces -w '.$project_name.' | psql -U geome_admin -w GenMon_CH';
-  $log->lwrite(" ** pg_dump cmd: " . $pg_dump_cmd);
+  if ($debug){$log->lwrite(" ** pg_dump cmd: " . $pg_dump_cmd);}
   exec($pg_dump_cmd);
   $dbh=db_connect();
   $sql_change_schema="ALTER TABLE apiis_admin.".$table_name_oldnew[$j][1]." SET SCHEMA public";
-  $log->lwrite(" ** alter schema command: " . $sql_change_schema);
+  if ($debug){$log->lwrite(" ** alter schema command: " . $sql_change_schema);}
   pg_query($sql_change_schema);
   if($table_name_oldnew[$j][1]<>$table_name_oldnew[$j][0]){
     $sql_rename_table="ALTER TABLE ".$table_name_oldnew[$j][1]." RENAME TO ".$table_name_oldnew[$j][0];
-    $log->lwrite(" ** rename table: " . $sql_rename_table);
+    if ($debug){$log->lwrite(" ** rename table: " . $sql_rename_table);}
     $result=pg_query($sql_rename_table);
     if($j==0 && $result==FALSE){
-      $log->lwrite(" ** Result false ==> exit ");
+      if ($debug){$log->lwrite(" ** Result false ==> exit ");}
       exec('mv `ls /var/lib/postgresql/projects/'.$project_name.'/*.pdf | head -1` /var/www/html/genmon-ch/pdf/error-'.$breed_name.'.pdf');
       exec('rm -R /var/lib/postgresql/projects/'.$project_name);
       exec('dropdb -U apiis_admin -w '.$project_name);
@@ -96,9 +103,10 @@ while ($j<count($table_name_oldnew)){
  
   $j++;
 }
-$log->lwrite("   ==> Finished renaming tables with count: " . $j);
-
-$log->lwrite(" * Rename indices ..."); 
+if ($debug){
+  $log->lwrite("   ==> Finished renaming tables with count: " . $j);
+  $log->lwrite(" * Rename indices ..."); 
+}  
 $index_name_oldnew=array(array("idx_transfer_1_".$breed_id, "idx_transfer_1"),
   array("idx_transfer_2_".$breed_id, "idx_transfer_2"),
   array("uidx_animal_1_".$breed_id, "uidx_animal_1"),
@@ -108,39 +116,40 @@ $index_name_oldnew=array(array("idx_transfer_1_".$breed_id, "idx_transfer_1"),
 $j=0;
 while ($j<count($index_name_oldnew)){
   $sql_drop_index="drop index if exists " . $index_name_oldnew[$j][0];
-  $log->lwrite( " ** Index drop: " . $sql_drop_index);
+  if ($debug){$log->lwrite( " ** Index drop: " . $sql_drop_index);}
   pg_query($sql_drop_index);
   $sql_rename_index="ALTER INDEX if exists ".$index_name_oldnew[$j][1]." RENAME TO ".$index_name_oldnew[$j][0];
-  $log->lwrite(" ** Index rename: " . $sql_rename_index);
+  if ($debug){$log->lwrite(" ** Index rename: " . $sql_rename_index);}
   pg_query($sql_rename_index);
   $j++;
 }
-$log->lwrite("   ==> Finished renaming indices with count: " . $j);
- 
-$log->lwrite(" * Update sex in breed table ...");
+if ($debug){
+  $log->lwrite("   ==> Finished renaming indices with count: " . $j);
+  $log->lwrite(" * Update sex in breed table ...");
+}
 $sql_male_rename = "UPDATE breed".$breed_id."_data SET db_sex=2 where db_sex=117";
-$log->lwrite(" ** SQL rename for males: " . $sql_male_rename);
+if ($debug){$log->lwrite(" ** SQL rename for males: " . $sql_male_rename);}
 pg_query($sql_male_rename); //in the other database, sex saved as 117 for males and 118 for females
 $sql_female_rename = "UPDATE breed".$breed_id."_data SET db_sex=3 where db_sex=118";
-$log->lwrite(" ** SQL rename for females: " . $sql_female_rename);
+if ($debug){$log->lwrite(" ** SQL rename for females: " . $sql_female_rename);}
 pg_query($sql_female_rename);
-$log->lwrite("   ==> ... done");
+if ($debug){$log->lwrite("   ==> ... done");}
 
 # //Also the breed id is always 119...
 # //change -9999 data to null data (if no data would not be uploaded for plz, intro, inb_gen and cryo)
 # //To be checked
 
-$log->lwrite(" * Update mvc for extended pedigree columns ...");
+if ($debug){$log->lwrite(" * Update mvc for extended pedigree columns ...");}
 $columns=array('plz', 'introgression', 'inb_gen', 'cryo_cons');
 for ($i = 0; $i < count($columns); $i++) {
   $sql_no_data="update breed".$breed_id."_data set ".$columns[$i]."=NULL where ".$columns[$i]."='-9999'";
-  $log->lwrite(" ** update stmt: " . $sql_no_data);
+  if ($debug){$log->lwrite(" ** update stmt: " . $sql_no_data);}
   pg_query($sql_no_data);
 }
-$log->lwrite("   ==> ... done");
+if ($debug){$log->lwrite("   ==> ... done");}
 
 # Cast column plz to integer to match plz column in other tables
-$log->lwrite(" * Casting columns in breed_data ...");
+if ($debug){$log->lwrite(" * Casting columns in breed_data ...");}
 $sql_cast=array();
 $sql_cast[]="alter table breed" . $breed_id . "_data alter column plz TYPE INTEGER USING (plz::integer)";
 $sql_cast[]="alter table breed" . $breed_id . "_data alter column inb_gen TYPE REAL USING (inb_gen::real);";
@@ -148,26 +157,26 @@ $sql_cast[]="update breed" . $breed_id . "_data set introgression=replace(introg
 $sql_cast[]="alter table breed" . $breed_id . "_data alter column introgression TYPE REAL USING (introgression::real);";
 $i=0;
 while ($i<count($sql_cast)){
-  $log->lwrite(" ** SQL Cast: " . $sql_cast[$i]);
+  if ($debug){$log->lwrite(" ** SQL Cast: " . $sql_cast[$i]);}
   pg_query($sql_cast[$i]);
   $i++;
 }
-$log->lwrite("   ==> ... done");
+if ($debug){$log->lwrite("   ==> ... done");}
  
  
 //Update the effective population size (Ne) table ! To put back
-$log->lwrite(" * Update effective population size ...");
+if ($debug){$log->lwrite(" * Update effective population size ...");}
 $sql_add_deltaF = "insert into breed".$breed_id."_ne (method) values ('Ne_DeltaFp')";
-$log->lwrite(" ** sql add deltaF: " . $sql_add_deltaF);
+if ($debug){$log->lwrite(" ** sql add deltaF: " . $sql_add_deltaF);}
 pg_query($sql_add_deltaF);
-$log->lwrite(" ** sql ne deltaF: " . $sql_ne_deltaF);
+if ($debug){$log->lwrite(" ** sql ne deltaF: " . $sql_ne_deltaF);}
 $sql_ne_deltaF = "update breed".$breed_id."_ne set ne=(select avg(ne) from breed".$breed_id."_ne_deltaF
 where year > (select max(year)- (SELECT round(pop,0) FROM tmp1_gen ORDER BY year DESC OFFSET 3 LIMIT 1) from breed".$breed_id."_ne_deltaF))
 where method='Ne_DeltaFp'";
 pg_query($sql_ne_deltaF);
  
 //Add the inbreeding to all animals from the animal table
-$log->lwrite(" * Add inbreeding to animals ...");
+if ($debug){$log->lwrite(" * Add inbreeding to animals ...");}
 $sql_breed_data=array();
 # $sql_breed_data[] = "drop table if exists breed".$breed_id."_data";
 # $sql_breed_data[] = "create table breed".$breed_id."_data as (select * from animal)";
@@ -178,45 +187,45 @@ from gene_stuff i
 where breed".$breed_id."_data.db_animal=i.db_animal)";
 $i=0;
 while ($i<count($sql_breed_data)){
- $log->lwrite(" ** Running inbreeding sql: " . $sql_breed_data[$i]);
+ if ($debug){$log->lwrite(" ** Running inbreeding sql: " . $sql_breed_data[$i]);}
  pg_query($sql_breed_data[$i]);
  $i++;
 }
-$log->lwrite("   ==> ... done with number of sql-statements run: " . $i);
+if ($debug){$log->lwrite("   ==> ... done with number of sql-statements run: " . $i);}
  
 // Put the inbreeding coefficient by plz. Calc mean/max inb  and number individuals over the last generation interval (GI)
 //know the last year of data
-$log->lwrite(" * Inbreeding ceoff by plz ...");
+if ($debug){$log->lwrite(" * Inbreeding ceoff by plz ...");}
 $sql_max_year="SELECT distinct max(EXTRACT(YEAR FROM birth_dt)) as max_year FROM breed".$breed_id."_data";
-$log->lwrite(" ** SQL max year: " . $sql_max_year);
+if ($debug){$log->lwrite(" ** SQL max year: " . $sql_max_year);}
 $max_year0 = pg_query($sql_max_year);
 $max_year=pg_fetch_result($max_year0,0,0);
-$log->lwrite("   ==> ... done with max year: " . $max_year);
+if ($debug){$log->lwrite("   ==> ... done with max year: " . $max_year);}
  
 //know the generation interval
-$log->lwrite(" * Generation interval ...");
+if ($debug){$log->lwrite(" * Generation interval ...");}
 $sql_GI="SELECT round(pop,0) FROM tmp1_gen ORDER BY year DESC OFFSET 3 LIMIT 1";
-$log->lwrite(" ** SQL GI: " . $sql_GI);
+if ($debug){$log->lwrite(" ** SQL GI: " . $sql_GI);}
 $GI0=pg_query($sql_GI);
 $GI=pg_fetch_result($GI0,0,0);
-$log->lwrite("   ==> ... done with GI = " . $GI);
+if ($debug){$log->lwrite("   ==> ... done with GI = " . $GI);}
  
  
 //Create the bree_inb_plz table (with mean inbreeding/introgression and # animal over last GI per plz)
-$log->lwrite(" * Create bree_inb_plz table ...");
+if ($debug){$log->lwrite(" * Create bree_inb_plz table ...");}
 $sql0="DROP TABLE if exists breed".$breed_id."_inb_plz";
-$log->lwrite(" ** SQL0: " . $sql0);
+if ($debug){$log->lwrite(" ** SQL0: " . $sql0);}
 $sql1="CREATE TABLE breed".$breed_id."_inb_plz (plz int references plzo_plz(plz), mean_inb_lastgi real, max_inb_lastgi real, num_ind_lastgi int, mean_inb_gen_lastgi real, mean_introgr_lastgi real)"; //with a foreign key on plzo_plz
-$log->lwrite(" ** SQL1: " . $sql1);
+if ($debug){$log->lwrite(" ** SQL1: " . $sql1);}
 $sql2="INSERT INTO breed".$breed_id."_inb_plz (select plz from plzo_plz)";
-$log->lwrite(" ** SQL2: " . $sql2);
+if ($debug){$log->lwrite(" ** SQL2: " . $sql2);}
 pg_query($sql0);
 pg_query($sql1);
 pg_query($sql2);
-$log->lwrite("   ... done ");
+if ($debug){$log->lwrite("   ... done ");}
  
 //mean inbreeding
-$log->lwrite(" * Mean inbreeding ...");
+if ($debug){$log->lwrite(" * Mean inbreeding ...");}
 $sql_mean= "UPDATE breed".$breed_id."_inb_plz
 SET mean_inb_lastgi =
 (select q.in from
@@ -225,12 +234,12 @@ from breed".$breed_id."_data bd
 where extract(year from bd.birth_dt)>=(".$max_year."-".$GI.")
 group by bd.plz) q
 where q.p=breed".$breed_id."_inb_plz.plz)";
-$log->lwrite(" ** SQL Mean: " . $sql_mean);
+if ($debug){$log->lwrite(" ** SQL Mean: " . $sql_mean);}
 pg_query($sql_mean);
-$log->lwrite("   ... done");
+if ($debug){$log->lwrite("   ... done");}
  
 //max inbreeding
-$log->lwrite(" * Max inbreeding ...");
+if ($debug){$log->lwrite(" * Max inbreeding ...");}
 $sql_max= "UPDATE breed".$breed_id."_inb_plz
 SET max_inb_lastgi =
 (select q.in from
@@ -239,12 +248,12 @@ from breed".$breed_id."_data bd
 where extract(year from bd.birth_dt)>=(".$max_year."-".$GI.")
 group by bd.plz) q
 where q.p=breed".$breed_id."_inb_plz.plz)";
-$log->lwrite(" ** SQL Max: " . $sql_max);
+if ($debug){$log->lwrite(" ** SQL Max: " . $sql_max);}
 pg_query($sql_max);
-$log->lwrite("   ... done");
+if ($debug){$log->lwrite("   ... done");}
  
 //Number of individuals
-$log->lwrite(" * Number of individuals ...");
+if ($debug){$log->lwrite(" * Number of individuals ...");}
 $sql_numInd= "UPDATE breed".$breed_id."_inb_plz
 SET num_ind_lastgi =
 (select q.in from
@@ -253,12 +262,12 @@ from breed".$breed_id."_data bd
 where extract(year from bd.birth_dt)>=(".$max_year."-".$GI.")
 group by bd.plz) q
 where q.p=breed".$breed_id."_inb_plz.plz)";
-$log->lwrite(" ** SQL NumInd: " . $sql_numInd);
+if ($debug){$log->lwrite(" ** SQL NumInd: " . $sql_numInd);}
 pg_query($sql_numInd);
-$log->lwrite("   ... done");
+if ($debug){$log->lwrite("   ... done");}
  
 //mean inbreeding (from genetic data)
-$log->lwrite(" * Mean inbreeding from genetic data ...");
+if ($debug){$log->lwrite(" * Mean inbreeding from genetic data ...");}
 $sql_mean_gen= "UPDATE breed".$breed_id."_inb_plz
 SET mean_inb_gen_lastgi =
 (select q.in from
@@ -267,12 +276,12 @@ from breed".$breed_id."_data bd
 where extract(year from bd.birth_dt)>=(".$max_year."-".$GI.")
 group by bd.plz) q
 where q.p=breed".$breed_id."_inb_plz.plz)";
-$log->lwrite(" ** SQL Mean Gen: " . $sql_mean_gen);
+if ($debug){$log->lwrite(" ** SQL Mean Gen: " . $sql_mean_gen);}
 pg_query($sql_mean_gen);
-$log->lwrite("   ... done");
+if ($debug){$log->lwrite("   ... done");}
  
 //mean introgression
-$log->lwrite(" * Mean introgression ...");
+if ($debug){$log->lwrite(" * Mean introgression ...");}
 $sql_mean_introgr= "UPDATE breed".$breed_id."_inb_plz
 SET mean_introgr_lastgi =
 (select q.in from
@@ -281,14 +290,14 @@ from breed".$breed_id."_data bd
 where extract(year from bd.birth_dt)>=(".$max_year."-".$GI.")
 group by bd.plz) q
 where q.p=breed".$breed_id."_inb_plz.plz)";
-$log->lwrite(" ** SQL Mean Intro: " . $sql_mean_introgr);
+if ($debug){$log->lwrite(" ** SQL Mean Intro: " . $sql_mean_introgr);}
 pg_query($sql_mean_introgr);
-$log->lwrite("   ... done");
+if ($debug){$log->lwrite("   ... done");}
  
 //introgression (mean, max, min, std) by year
-$log->lwrite(" * Introgression by year ...");
+if ($debug){$log->lwrite(" * Introgression by year ...");}
 $sql_drop_intryear="DROP TABLE if exists breed".$breed_id."_intryear";
-$log->lwrite(" ** SQL Drop IntrYear: " . $sql_drop_intryear);
+if ($debug){$log->lwrite(" ** SQL Drop IntrYear: " . $sql_drop_intryear);}
 $sql_intryear="create table breed".$breed_id."_intryear as
 (select q.year, count(*) as num, round(cast(avg(q.introgression) as numeric),3) as av, round(cast(max(q.introgression) as numeric),3) as max, round(cast(min(q.introgression) as numeric),3) as min, round(cast(stddev(q.introgression) as numeric),3) as std
 from
@@ -297,18 +306,18 @@ from breed".$breed_id."_data
 where introgression is not null) q
 group by q.year
 order by q.year)";
-$log->lwrite(" ** SQL IntrYear: " . $sql_intryear);
+if ($debug){$log->lwrite(" ** SQL IntrYear: " . $sql_intryear);}
 pg_query($sql_drop_intryear);
 pg_query($sql_intryear);
-$log->lwrite("   ... done");
+if ($debug){$log->lwrite("   ... done");}
  
 //Update summary table
-$log->lwrite(" * Update summary table ...");
+if ($debug){$log->lwrite(" * Update summary table ...");}
 $sql_summary1="SELECT sum(a_avg*number)/sum(number) as inb_avg, sum(number) FROM breed".$breed_id."_inbryear WHERE year != 'unknown' and cast(year as integer) >=(".$max_year."-".$GI.")"; //breed".$breed_id."_inbryear=tmp2_table3
-$log->lwrite(" ** SQL Summary1: " . $sql_summary1);
+if ($debug){$log->lwrite(" ** SQL Summary1: " . $sql_summary1);}
 $summary1=pg_query($sql_summary1);
 $inb_avg=round(pg_fetch_result($summary1, 0, 0),4);
-$log->lwrite(" ** Avg Inb: " . $inb_avg);
+if ($debug){$log->lwrite(" ** Avg Inb: " . $inb_avg);}
 $sql_breed_summary=array();
 $sql_breed_summary[] = "UPDATE summary SET last_year = ".$max_year."
 where breed_id=".$breed_id."";
@@ -319,14 +328,14 @@ where breed_id=".$breed_id."";
 $sql_breed_summary[] = "UPDATE summary SET gi=".$GI." where breed_id=".$breed_id."";
 #$sql_breed_summary[] = "UPDATE summary SET ne=null where breed_id=".$breed_id."";
 $sql_breed_summary[] = "UPDATE summary SET ne=(SELECT ne FROM breed".$breed_id."_ne where method = 'Ne_DeltaFp') where breed_id=".$breed_id."";
-$log->lwrite("   ... done");
+if ($debug){$log->lwrite("   ... done");}
  
-$log->lwrite(" * Including FunctionsCalcIndex ...");
+if ($debug){$log->lwrite(" * Including FunctionsCalcIndex ...");}
 include("FunctionsCalcIndex.php");
 $min_radius2=Min_radius($breed_id);
-$log->lwrite(" ** Min radius computed: " . $min_radius2);
+if ($debug){$log->lwrite(" ** Min radius computed: " . $min_radius2);}
  
-$log->lwrite(" * Update breed summary ...");
+if ($debug){$log->lwrite(" * Update breed summary ...");}
 $sql_breed_summary[]="UPDATE summary SET min_radius = ".$min_radius2."
 where breed_id = ".$breed_id."";
 $sql_table_socioec="SELECT table_name
@@ -335,19 +344,19 @@ WHERE table_schema='public'
 AND table_name LIKE 'plz_socioec_%'
 ORDER BY table_name DESC
 LIMIT 1"; //select the last table (most recent one) with socioeconomical data
-$log->lwrite(" ** SQL Table Socioec: " . $sql_table_socioec);
+if ($debug){$log->lwrite(" ** SQL Table Socioec: " . $sql_table_socioec);}
 $table_socioec0=pg_query($sql_table_socioec);
 $table_socioec=pg_fetch_result($table_socioec0,0,0);
-$log->lwrite(" ** Table socioec: " . $table_socioec);
+if ($debug){$log->lwrite(" ** Table socioec: " . $table_socioec);}
  
-$log->lwrite(" * Update socioec ...");
+if ($debug){$log->lwrite(" * Update socioec ...");}
 $sql_breed_summary[] = "UPDATE summary SET index_socio_eco =
 (SELECT round(cast(sum(a.num_ind_lastGI*b.index_socioec)/sum(a.num_ind_lastGI) as numeric),3)
 FROM breed".$breed_id."_inb_plz a, ".$table_socioec." b
 WHERE a.plz=b.plz)
 WHERE breed_id = ".$breed_id."";  //calc the weighted mean over plz
  
-$log->lwrite(" * Socioeco index ...");
+if ($debug){$log->lwrite(" * Socioeco index ...");}
 $sql_breed_summary[]="(SELECT round(cast((aa.plz_value+bb.cult+cc.farm) as numeric),2)
 FROM (SELECT sum(a.index_socio_eco*b.weight) as plz_value
 FROM summary a, thres_weight b
@@ -372,23 +381,23 @@ WHERE extract(year from b.birth_dt)>=(".$max_year."-".$GI."))
 WHERE a.breed_id=".$breed_id."";
  
 //calculate the trend of number of animals
-$log->lwrite(" * Trend of number of animals ...");
+if ($debug){$log->lwrite(" * Trend of number of animals ...");}
 $sql_max_year="SELECT max(date_part('year',birth_dt)) from breed".$breed_id."_data";
-$log->lwrite(" ** SQL Max Year: " . $sql_max_year);
+if ($debug){$log->lwrite(" ** SQL Max Year: " . $sql_max_year);}
 $res_max_year=pg_query($sql_max_year);
 $max_year=pg_fetch_result($res_max_year,0,0);
-$log->lwrite(" ** Max Year: " . $max_year);
+if ($debug){$log->lwrite(" ** Max Year: " . $max_year);}
 $males=array();
 $females=array();
 $years=array();
 include("FunctionsLinearTrend.php");
 for($i=1;$i<7;$i++){ //calculate over last 5 years (without taking the very last year which might be incomplete)
 	$year=$max_year-$i;
-	$log->lwrite(" ** Current year: " . $year);
+	if ($debug){$log->lwrite(" ** Current year: " . $year);}
 	$sql_get_male="SELECT count(*) FROM breed".$breed_id."_data WHERE db_sex=2 AND date_part('year', birth_dt)=".$year; //maybe sex=3
-	$log->lwrite(" ** SQL Get Male: " . $sql_get_male);
+	if ($debug){$log->lwrite(" ** SQL Get Male: " . $sql_get_male);}
 	$sql_get_female="SELECT count(*) FROM breed".$breed_id."_data WHERE db_sex=3 AND date_part('year', birth_dt)=".$year;
-	$log->lwrite(" ** SQL Get Female: " . $sql_get_female);
+	if ($debug){$log->lwrite(" ** SQL Get Female: " . $sql_get_female);}
   	$res_get_male=pg_query($sql_get_male);
   	$res_get_female=pg_query($sql_get_female);
 	if(!empty(pg_fetch_result($res_get_male,0,0)) && !empty(pg_fetch_result($res_get_female,0,0))){
@@ -413,7 +422,7 @@ where breed_id=".$breed_id;
 //Note that cultural_value, num_farms_trend and cultural_value are updated in the GenAnimal.php page
 $i=0;
 while ($i<count($sql_breed_summary)){
-	$log->lwrite(" ** Current SQL Breed Summary: " . $sql_breed_summary[$i]);
+	if ($debug){$log->lwrite(" ** Current SQL Breed Summary: " . $sql_breed_summary[$i]);}
 	pg_query($sql_breed_summary[$i]);
 	$i++;
 }
@@ -448,19 +457,26 @@ db_disconnect($dbh);
 //delete temp tables
 //exec('/home/lasigadmin/genmon-ch/apiis/bin/./Calc_inb.pl -k 1'); //does not run the code but deletes temporary tables
 //exec('/home/lasigadmin/genmon-ch/apiis/bin/./Calc_pop.pl -b '.$breed_name.' -m M -f F -d 1');
- 
+
+# moving poprep results 
 exec('mv /var/lib/postgresql/projects/'.$project_name.'/Popreport*/Inbreeding-*.pdf /var/www/html/genmon-ch/pdf');
 exec('mv /var/lib/postgresql/projects/'.$project_name.'/Popreport*/Population-*.pdf /var/www/html/genmon-ch/pdf');
 exec('mv /var/lib/postgresql/projects/'.$project_name.'/Popreport*/Monitoring-*.pdf /var/www/html/genmon-ch/pdf');
-$log->lwrite(" * Moved pdf reports ... done");
-exec('rm -R /var/lib/postgresql/projects/'.$project_name);
-$log->lwrite(" * Removed project dir " . $project_name . " ... done");
-exec('dropdb -U apiis_admin -w '.$project_name);
-$log->lwrite(" * Dropped project db ... done");
-#exec('rm -R /var/lib/postgresql/incoming/*');
+if ($debug){$log->lwrite(" * Moved pdf reports ... done");}
+
+# Remove project data
+if ($debug){
+  $log->lwrite(" * Removed project dir " . $project_name . " ... done");
+  $log->lwrite(" * Dropped project db ... done");
+  $log->lwrite(" * Removed incoming subdir ...");
+} else {
+  exec('rm -R /var/lib/postgresql/projects/'.$project_name);
+  exec('dropdb -U apiis_admin -w '.$project_name);
+  exec('rm -R /var/lib/postgresql/incoming/*');
+}
 # 
 # // close log file
-$log->lclose();
+if ($debug){$log->lclose();}
 # 
 $_SESSION['breed_id']=$breed_id;
 header("Location:index.php");
