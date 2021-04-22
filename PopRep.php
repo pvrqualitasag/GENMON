@@ -3,7 +3,7 @@
 //At the end, it aggregates things for the GenMon application by PLZ,.. store restults in the summary table
 //
 // set debugging flag
-$debug=TRUE;
+$debug=FALSE;
 // Logging, in case when $debug is set to TRUE
 if ($debug){
   include("logger.php");
@@ -466,9 +466,9 @@ if ($debug){$log->lwrite(" * Moved pdf reports ... done");}
 
 # Remove project data
 if ($debug){
-  $log->lwrite(" * Removed project dir " . $project_name . " ... done");
-  $log->lwrite(" * Dropped project db ... done");
-  $log->lwrite(" * Removed incoming subdir ...");
+  $log->lwrite(" * Remove project dir " . $project_name . " manually with: rm -R /var/lib/postgresql/projects/".$project_name);
+  $log->lwrite(" * Drop project db manually with: dropdb -U apiis_admin -w ".$project_name);
+  $log->lwrite(" * Remove incoming subdirs manually with: rm -R /var/lib/postgresql/incoming/*");
 } else {
   exec('rm -R /var/lib/postgresql/projects/'.$project_name);
   exec('dropdb -U apiis_admin -w '.$project_name);

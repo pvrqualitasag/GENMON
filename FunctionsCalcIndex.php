@@ -1,48 +1,116 @@
 <?php
 function IndexCalc($breed_id,$crit_type,$owner,$species){
-$sql="select *
+  $sql="select *
 		from thres_weight where owner='".$owner."' and crit_type='".$crit_type."' and species='".$species."'
 		union
 		select * from thres_weight
 		where owner='".$owner."' and  crit_type='".$crit_type."' and species='default'
 		and not exists (select * from thres_weight where owner='".$owner."' and crit_type='".$crit_type."' and species='".$species."')";
-$sql1=pg_query($sql);
-$num_rows=pg_num_rows($sql1);
-$index1=0;
-$sum_weight=0;
-for($i=0;$i<$num_rows;$i++){
-	$name=pg_fetch_result($sql1, $i, 0);
-	$sql2="select t.weight, t.t1, t.t2 from thres_weight t
-	where crit_type='".$crit_type."' and t.criteria='".$name."' and owner='".$owner."' and species='".$species."'
-	union
-	select t.weight, t.t1, t.t2 from thres_weight t
-	where crit_type='".$crit_type."' and t.criteria='".$name."' and owner='".$owner."' and species='default'
-	and not exists (select t.weight, t.t1, t.t2 from thres_weight t
-		where crit_type='".$crit_type."' and t.criteria='".$name."' and owner='".$owner."' and species='".$species."')
-	";
-	$w=pg_query($sql2);
-	$weight=pg_fetch_result($w,0,0);
-	$t1=pg_fetch_result($w,0,1);
-	$t2=pg_fetch_result($w,0,2);
-
-	$sql_summary0 = "select ".$name." from summary where breed_id = ".$breed_id." and ".$name." is not null";//
-	$sql_summary = pg_query($sql_summary0);
-	if (pg_num_rows($sql_summary)<>0){
-		$value=min(max((pg_fetch_result($sql_summary,0,0)-$t1)*1/($t2-$t1),0),1);
-		$index1+=$value*$weight;
-		$sum_weight+=$weight;
-	}
-}
-if ($sum_weight==0){ //prevent division by 0
-	$sum_weight=1;
-}
-$index1=round($index1/$sum_weight,3);
-
-$sql_set_index="update summary set index_".$crit_type." = ".$index1." where breed_id = ".$breed_id;
-pg_query($sql_set_index);
-return $index1;
+  $sql1=pg_query($sql);
+  $num_rows=pg_num_rows($sql1);
+  $index1=0;
+  $sum_weight=0;
+  for($i=0;$i<$num_rows;$i++){
+	  $name=pg_fetch_result($sql1, $i, 0);
+	  $sql2="select t.weight, t.t1, t.t2 from thres_weight t
+	    where crit_type='".$crit_type."' and t.criteria='".$name."' and owner='".$owner."' and species='".$species."'
+	    union
+	    select t.weight, t.t1, t.t2 from thres_weight t
+	    where crit_type='".$crit_type."' and t.criteria='".$name."' and owner='".$owner."' and species='default'
+	    and not exists (select t.weight, t.t1, t.t2 from thres_weight t
+		  where crit_type='".$crit_type."' and t.criteria='".$name."' and owner='".$owner."' and species='".$species."')
+	  ";
+	  $w=pg_query($sql2);
+	  $weight=pg_fetch_result($w,0,0);
+	  $t1=pg_fetch_result($w,0,1);
+	  $t2=pg_fetch_result($w,0,2);
+	  $sql_summary0 = "select ".$name." from summary where breed_id = ".$breed_id." and ".$name." is not null";//
+	  $sql_summary = pg_query($sql_summary0);
+	  if (pg_num_rows($sql_summary)<>0){
+		  $value=min(max((pg_fetch_result($sql_summary,0,0)-$t1)*1/($t2-$t1),0),1);
+		  $index1+=$value*$weight;
+		  $sum_weight+=$weight;	  
+	  }
+  }
+  if ($sum_weight==0){ //prevent division by 0
+	  $sum_weight=1;
+  }
+  $index1=round($index1/$sum_weight,3);
+  $sql_set_index="update summary set index_".$crit_type." = ".$index1." where breed_id = ".$breed_id;
+  pg_query($sql_set_index);
+  return $index1;
 }
 
+function LoggedIndexCalc($breed_id, $crit_type, $owner, $species, $debug, $log){
+  if ($debug){
+    $log->lwrite(' ** LoggedIndexCalc -- Arguments ...');
+    $log->lwrite(' ** LoggedIndexCalc -- Breed id: ' . $breed_id);
+    $log->lwrite(' ** LoggedIndexCalc -- crit_type: ' . $crit_type);
+    $log->lwrite(' ** LoggedIndexCalc -- owner:     ' . $owner);
+    $log->lwrite(' ** LoggedIndexCalc -- species:   ' . $species);
+  }
+  $sql="select *
+		from thres_weight where owner='".$owner."' and crit_type='".$crit_type."' and species='".$species."'
+		union
+		select * from thres_weight
+		where owner='".$owner."' and  crit_type='".$crit_type."' and species='default'
+		and not exists (select * from thres_weight where owner='".$owner."' and crit_type='".$crit_type."' and species='".$species."')";
+	if ($debug)	{	$log->lwrite(' ** LoggedIndexCalc -- weight-sql: ' . $sql);	}
+  $sql1=pg_query($sql);
+  $num_rows=pg_num_rows($sql1);
+  if ($debug)	{	$log->lwrite(' ** LoggedIndexCalc -- number of rows from weight-select: ' . $num_rows);	}
+  $index1=0;
+  $sum_weight=0;
+  for($i=0;$i<$num_rows;$i++){
+	  $name=pg_fetch_result($sql1, $i, 0);
+    if ($debug)	{	$log->lwrite(' ** LoggedIndexCalc -- loop-round: ' . $i . ' -- name: ' . $name);	}
+	  $sql2="select t.weight, t.t1, t.t2 from thres_weight t
+	    where crit_type='".$crit_type."' and t.criteria='".$name."' and owner='".$owner."' and species='".$species."'
+	    union
+	    select t.weight, t.t1, t.t2 from thres_weight t
+	    where crit_type='".$crit_type."' and t.criteria='".$name."' and owner='".$owner."' and species='default'
+	    and not exists (select t.weight, t.t1, t.t2 from thres_weight t
+		  where crit_type='".$crit_type."' and t.criteria='".$name."' and owner='".$owner."' and species='".$species."')";
+    if ($debug)	{	$log->lwrite(' ** LoggedIndexCalc -- loop-round: ' . $i . ' -- weigth-sql2: ' . $sql2);	}
+		# query and results  
+	  $w=pg_query($sql2);
+	  $weight=pg_fetch_result($w,0,0);
+	  $t1=pg_fetch_result($w,0,1);
+	  $t2=pg_fetch_result($w,0,2);
+    if ($debug)	{	
+      $log->lwrite(' ** LoggedIndexCalc -- loop-round: ' . $i . ' -- weight-value: ' . $weight);
+      $log->lwrite(' ** LoggedIndexCalc -- loop-round: ' . $i . ' -- t1:           ' . $t1);
+      $log->lwrite(' ** LoggedIndexCalc -- loop-round: ' . $i . ' -- t2:           ' . $t2);
+    }
+	  $sql_summary0 = "select ".$name." from summary where breed_id = ".$breed_id." and ".$name." is not null";//
+	  if ($debug)	{	$log->lwrite(' ** LoggedIndexCalc -- loop-round: ' . $i . ' -- sql_summary0: ' . $sql_summary0);	}
+	  $sql_summary = pg_query($sql_summary0);
+	  if (pg_num_rows($sql_summary)<>0){
+		  $value=min(max((pg_fetch_result($sql_summary,0,0)-$t1)*1/($t2-$t1),0),1);
+		  $index1+=$value*$weight;
+		  $sum_weight+=$weight;	
+      if ($debug)	{	  
+        $log->lwrite(' ** LoggedIndexCalc -- loop-round: ' . $i . ' -- value:      ' . $value);
+        $log->lwrite(' ** LoggedIndexCalc -- loop-round: ' . $i . ' -- index1:     ' . $index1);
+        $log->lwrite(' ** LoggedIndexCalc -- loop-round: ' . $i . ' -- sum_weight: ' . $sum_weight);
+      }
+	  }
+  }
+  if ($sum_weight==0){ //prevent division by 0
+	  $sum_weight=1;
+  }
+  $index1=round($index1/$sum_weight,3);
+  if ($debug)	{	 
+    $log->lwrite(' ** LoggedIndexCalc -- sum_weight: ' . $sum_weight);
+    $log->lwrite(' ** LoggedIndexCalc -- -- index1:  ' . $index1);
+  }    
+  $sql_set_index="update summary set index_".$crit_type." = ".$index1." where breed_id = ".$breed_id;
+  if ($debug)	{	 $log->lwrite(' ** LoggedIndexCalc -- sql_set_index: ' .  $sql_set_index); }
+  pg_query($sql_set_index);
+  return $index1;
+}
+
+# Computation of Minimal Radius
 function Min_radius($breed_id){
 
 $sql_distance= "select st_distance(st_setsrid(a.wmc,3857), st_setsrid(pc.centroid,3857)) as distance, p.num_ind_lastgi
@@ -79,6 +147,7 @@ $min_radius2=round($min_radius2, 2);
 return $min_radius2;
 }
 
+# Computation of Socio-Econ Index
 function IndexSocioEcPLZ($year, $user){
 //get the weights and thresholds in an array
 $sql="select * from thres_weight where crit_type='SocioEco' and owner='".$user."' and criteria not like 'breed%'";
@@ -166,4 +235,123 @@ for($j=0;$j<$num_row2;$j++){ //loop on different plz
 	}
 return;
 }
+
+# Logged Version of Computation of Socio-Econ Index
+function LoggedIndexSocioEcPLZ($year, $user, $debug, $log){
+//get the weights and thresholds in an array
+$sql="select * from thres_weight where crit_type='SocioEco' and owner='".$user."' and criteria not like 'breed%'";
+if ($debug){ $log->lwrite(' ** LoggedIndexSocioEcPLZ -- weight sql: ' . $sql); }
+$sql1=pg_query($sql);
+$num_rows1=pg_num_rows($sql1);
+if ($debug){ $log->lwrite(' ** LoggedIndexSocioEcPLZ -- number of rows from weight select: ' . $num_rows1); }
+$weight=array();
+$t1=array();
+$t2=array();
+for($i=0;$i<$num_rows1;$i++){
+	$name=pg_fetch_result($sql1, $i,0);
+	if ($debug){ $log->lwrite(' ** LoggedIndexSocioEcPLZ -- round: ' . $i . ' -- name: ' . $name); }
+	$sql2="select t.weight, t.t1, t.t2 from thres_weight t
+	where crit_type='SocioEco'
+	and t.criteria='".$name."'
+	and owner='".$user."'";
+	if ($debug){ $log->lwrite(' ** LoggedIndexSocioEcPLZ -- round: ' . $i . ' -- sql: ' . $sql2); }
+	$w=pg_query($sql2);
+	$weight[]=pg_fetch_result($w,0,0);
+	$t1[]=pg_fetch_result($w,0,1);
+	$t2[]=pg_fetch_result($w,0,2);
+	if ($debug){ 
+	  $log->lwrite(' ** LoggedIndexSocioEcPLZ -- round: ' . $i . ' -- weight: ' . $weight[$i]);
+	  $log->lwrite(' ** LoggedIndexSocioEcPLZ -- round: ' . $i . ' -- t1:     ' . $t1[$i]);
+	  $log->lwrite(' ** LoggedIndexSocioEcPLZ -- round: ' . $i . ' -- t2:     ' . $t2[$i]);
+	}
+}
+//If index_socio_ec_user does not exist, add this column
+$sql_column="select column_name 
+from information_schema.columns 
+where table_name='plz_socioec_".$year."'
+and column_name='index_socioec';"; //and column_name='index_socioec_".$user."';";
+if ($debug){ $log->lwrite(' ** LoggedIndexSocioEcPLZ -- sql stmt to add column: ' . $sql_column); }
+$result_column=pg_query($sql_column);
+if(pg_num_rows($result_column)==0){
+  $sql_add="alter table plz_socioec_".$year." add column index_socioec real"; //$sql_add="alter table plz_socioec_".$year." add column index_socioec_".$user." real";
+  if ($debug){ $log->lwrite(' ** LoggedIndexSocioEcPLZ -- add column stmt: ' . $sql_add); }
+  pg_query($sql_add);
+}
+
+//calculate the index
+$sql_ofs="select plz from plz_socioec_".$year."";
+if ($debug){ $log->lwrite(' ** LoggedIndexSocioEcPLZ -- sql-stmt ofs: ' . $sql_ofs); }
+$sql_ofs2=pg_query($sql_ofs);
+$num_row2=pg_num_rows($sql_ofs2);
+if ($debug){ $log->lwrite(' ** LoggedIndexSocioEcPLZ -- number of rows from ofs-stmt: ' . $num_row2); }
+for($j=0;$j<$num_row2;$j++){ //loop on different plz
+	$index1=0;
+	$sum_weight=0;
+	$plz=pg_fetch_result($sql_ofs2,$j,0);
+	for($k=0;$k<$num_rows1;$k++){ //loop on criteria
+		$name=pg_fetch_result($sql1, $k,0);
+		$sql_crit = "select ".$name." from plz_socioec_".$year." where plz = ".$plz." and ".$name." is not null";
+		#if ($debug){ 
+		#  $log->lwrite(' ** LoggedIndexSocioEcPLZ -- round: (' . $j . ', ' . $k . ') -- name: ' . $name); 
+	  #  $log->lwrite(' ** LoggedIndexSocioEcPLZ -- round: (' . $j . ', ' . $k . ') -- sql_crit: ' . $sql_crit); 
+		#}
+		$crit = pg_query($sql_crit);
+		if (pg_num_rows($crit)<>0){
+			$value=min(max((pg_fetch_result($crit,0,0)-$t1[$k])*1/($t2[$k]-$t1[$k]),0),1); //proportion of satisfaction for the given criteria
+			$index1+=$value*$weight[$k]; //sum of the weighted satisfaction value
+			$sum_weight+=$weight[$k];
+			#if ($debug){ 
+			#  $log->lwrite(' ** LoggedIndexSocioEcPLZ -- round: (' . $j . ', ' . $k . ') -- value:      ' . $value);
+			#  $log->lwrite(' ** LoggedIndexSocioEcPLZ -- round: (' . $j . ', ' . $k . ') -- index1:     ' . $index1);
+			#  $log->lwrite(' ** LoggedIndexSocioEcPLZ -- round: (' . $j . ', ' . $k . ') -- sum_weight: ' . $sum_weight);
+			#}
+		}
+	}
+	if ($sum_weight==0){ //prevent division by 0
+	  $sum_weight=1;
+	  if ($debug){ $log->lwrite(' ** LoggedIndexSocioEcPLZ  -- round: (' . $j . ') -- resetting sum_weight: ' . $sum_weight); }
+	}	
+	$index1=round($index1/$sum_weight,3);
+	if ($debug){ $log->lwrite(' ** LoggedIndexSocioEcPLZ  -- round: (' . $j . ') -- rounded index1: ' . $index1); }
+	$sql_set_index="update plz_socioec_".$year." set index_socioec = ".$index1." where plz=".$plz.""; //	$sql_set_index="update plz_socioec_".$year." set index_socioec_".$user." = ".$index1." where plz=".$plz."";
+	if ($debug){ $log->lwrite(' ** LoggedIndexSocioEcPLZ  -- round: (' . $j . ') -- sql_set_index: ' . $sql_set_index); }
+	pg_query($sql_set_index);
+}
+	$sql_set_index2="update plzo_plz set index_socioec = b.index_socioec from plz_socioec_".$year." b where b.plz=plzo_plz.plz"; //	$sql_set_index="update plz_socioec_".$year." set index_socioec_".$user." = ".$index1." where plz=".$plz."";
+	if ($debug){ $log->lwrite(' ** LoggedIndexSocioEcPLZ -- sql_set_index2: ' . $sql_set_index2); }
+	pg_query($sql_set_index2);
+	$res_breed=pg_query("select distinct breed_id from summary");
+	for($i=0;$i<pg_num_rows($res_breed);$i++){
+		$breed_id=pg_fetch_result($res_breed,$i,0);
+		if ($debug){ $log->lwrite(' ** LoggedIndexSocioEcPLZ -- round: ' . $i . ' -- breed_id: ' . $breed_id); }
+		$sql_breed_index1= "UPDATE summary SET index_socio_eco =
+			(SELECT round(cast(sum(a.num_ind_lastGI*b.index_socioec)/sum(a.num_ind_lastGI) as numeric),3)
+			FROM breed".$breed_id."_inb_plz a, plzo_plz b
+			WHERE a.plz=b.plz)
+			WHERE breed_id = ".$breed_id."";  //calc the weighted mean over plz
+		if ($debug){ $log->lwrite(' ** LoggedIndexSocioEcPLZ -- round: ' . $i . ' -- sql_breed_index1: ' . $sql_breed_index1); }	
+		$sql_breed_index2="(SELECT round(cast((aa.plz_value+bb.cult+cc.farm) as numeric),2)
+				FROM (SELECT sum(a.index_socio_eco*b.weight) as plz_value
+					FROM summary a, thres_weight b
+					WHERE b.crit_type='SocioEco'
+					AND b.criteria NOT LIKE 'breed%'
+					AND b.owner='".$user."'
+					AND a.breed_id=".$breed_id.") aa,
+					(SELECT d.weight*c.breed_cultural_value as cult
+					FROM summary c, thres_weight d
+					WHERE d.criteria='breed_cultural_value'
+					AND d.owner='".$user."'
+					AND c.breed_id=".$breed_id.") bb,
+					(SELECT f.weight*e.breed_num_farms_trend as farm
+					FROM summary e, thres_weight f
+					WHERE f.criteria='breed_num_farms_trend'
+					AND f.owner='".$user."'
+					AND e.breed_id=".$breed_id.") cc)"; //add to the soceco index the breed dimension
+		if ($debug){ $log->lwrite(' ** LoggedIndexSocioEcPLZ -- round: ' . $i . ' -- sql_breed_index2: ' . $sql_breed_index2); }			
+		pg_query($sql_breed_index1);
+		pg_query($sql_breed_index2);
+	}
+return;
+}
+
 ?>

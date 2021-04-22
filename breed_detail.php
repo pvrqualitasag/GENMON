@@ -10,20 +10,22 @@
 		<!--<script type="text/javascript" src="js/cssrefresh.js"></script>-->
 	</head>    
 <?php 
+// set debugging flag
+$debug=FALSE;
+// Logging, in case when $debug is set to TRUE
+if ($debug){
+  include("logger.php");
+  # logging
+  // Logging class initialization
+  $log = new Logging();
 
-// Logging
-include("logger.php");
-# logging
-// Logging class initialization
-$log = new Logging();
+  // set path and name of log file (optional)
+  $date=date('YmdHis');
+  $log->lfile('/tmp/' . $date . '_mylog_breed_detail.log');
 
-// set path and name of log file (optional)
-$date=date('YmdHis');
-$log->lfile('/tmp/' . $date . '_mylog_breed_detail.log');
-
-// write message to the log file
-$log->lwrite(' * Starting breed_detail.php ...');
-
+  // write message to the log file
+  $log->lwrite(' * Starting breed_detail.php ...');
+}
 include("header.php");
 include("connectDataBase.php");
 include("FunctionsCalcIndex.php");
@@ -35,7 +37,7 @@ if (isset($_POST[ 'breed_id' ])){
 /*if (isset($_POST[ 'breed_name' ])){
 	$breed_name = $_POST[ 'breed_name' ];
 }*/
-$log->lwrite(' * Breed ID: ' . $breed_id);
+if ($debug){$log->lwrite(' * Breed ID: ' . $breed_id);}
 
 
 $sql_long_name="SELECT long_name FROM codes where db_code=".$breed_id.""; 
@@ -52,23 +54,27 @@ $owner=pg_fetch_result($result_owner, 0, 0);
 $sql_species="SELECT species FROM summary where breed_id=".$breed_id.""; 
 $result_species=pg_query($sql_species);
 $species=pg_fetch_result($result_species, 0, 0);
-$log->lwrite(' * Owner: ' . $owner);
-$log->lwrite(' * Species: ' . $species);
+if ($debug){
+  $log->lwrite(' * Owner: ' . $owner);
+  $log->lwrite(' * Species: ' . $species);
+}
 if(isset($_POST["Ne"])==1){
-	$log->lwrite(' * Breed: ' . $breed_id);
+	if ($debug){$log->lwrite(' * Breed: ' . $breed_id);}
 	$sql_ne_dfp="SELECT Ne FROM breed".$breed_id."_ne where method = 'Ne_DeltaFp'";
-	$log->lwrite(' * SQL Ne DFP: ' . $sql_ne_dfp);
+	if ($debug){$log->lwrite(' * SQL Ne DFP: ' . $sql_ne_dfp);}
 	$ne_dfp=pg_query($sql_ne_dfp);
 	$ne_dfp_result=pg_fetch_result($ne_dfp, 0, 0);
-	$log->lwrite(' * Ne DFP: ' . $ne_dfp_result);
+	if ($debug){$log->lwrite(' * Ne DFP: ' . $ne_dfp_result);}
 	$sql_set_Ne="update summary set ne=".$ne_dfp_result." where breed_id=".$_POST["breed_id"].""; 
 	pg_query($sql_set_Ne);
-	$log->lwrite(' * Ne set to ' . $ne_dfp_result);
+	if ($debug){$log->lwrite(' * Ne set to ' . $ne_dfp_result);}
 	if(isset($_SESSION['user']) && $_SESSION['user']==$owner){
 	  $index_demo=IndexCalc($breed_id,'demo', $_SESSION['user'], $species); //FunctionsCalcIndex.php
 	  $index_final=IndexCalc($breed_id,'final', $_SESSION['user'], $species); //FunctionsCalcIndex.php
-    $log->lwrite(' * Compute index_demo: ' . $index_demo);
-	  $log->lwrite(' * Computed index_final: ' . $index_final);
+    if ($debug){
+      $log->lwrite(' * Compute index_demo: ' . $index_demo);
+	    $log->lwrite(' * Computed index_final: ' . $index_final);
+	 }   
 	}
 }
 ?>
@@ -110,7 +116,7 @@ if(isset($_POST["Ne"])==1){
 		</form>
 		<br/>
 		<form action="UpdateBreed.php" method="post"> Or update breed information
-		  <input type="hidden" name="breed_id" value="<?php echo $breed_id;$log->lwrite(' * Update info for breed: ' . $breed_id);?>">
+		  <input type="hidden" name="breed_id" value="<?php echo $breed_id;if ($debug){$log->lwrite(' * Update info for breed: ' . $breed_id);}?>">
 			<input type="submit" value="Update breed information" /> 
 		</form>
 		<br /><br/>
@@ -582,6 +588,6 @@ else{
 include("footer.php");
 db_disconnect($dbh);
 # // close log file
-$log->lclose();
+if ($debug){$log->lclose();}
 ?>
 </html>

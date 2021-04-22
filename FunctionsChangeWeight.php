@@ -18,8 +18,6 @@ function change_weight_form($table_name, $criteria_type, $owner, $species){
 	}
 	?>
 	<form name="input" action="" method="post">
-
-
 	</thead>
 	<tbody>
 	<?php for($j=0;$j<$num_row;$j++){ ?>
