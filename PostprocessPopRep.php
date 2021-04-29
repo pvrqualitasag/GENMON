@@ -19,6 +19,9 @@ $log->lwrite(' * Starting Postprocess_PopRep.php ...');
 $breed_id=6;
 $user='';
 
+# fix project name for debugging
+$PROJNAME='PPP_sOIJi5jOrPpzw';
+
 // db connection
 include("connectDataBase.php");
 $dbh = db_connect();
@@ -46,7 +49,8 @@ $log->lwrite(" * User:       " . $user);
 # 
 #//Get the name of the project
 $dbh=db_connect();
-$sql_dbname="SELECT datname FROM pg_database where datname like 'PPP%'";
+//$sql_dbname="SELECT datname FROM pg_database where datname like 'PPP%'";
+$sql_dbname="SELECT datname FROM pg_database where datname = '" . $PROJNAME ."'";
 $dbname0=pg_query($sql_dbname);
 $project_name=pg_fetch_result($dbname0, 0, 0);
 $log->lwrite(" * Project: " . $project_name);
